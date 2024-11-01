@@ -98,6 +98,8 @@ def get_run_data(run):
         ["nexafs_i0up", "data", "nexafs_i0up_exposure_time"],
         ["nexafs_i1", "data", "nexafs_i0up_exposure_time"],
         ["nexafs_sc", "data", "ucal_sc_exposure_time"])
+    if exposure is None:
+        exposure = 0
     exposure = float(exposure)
     columns = []
     datadict = {}
