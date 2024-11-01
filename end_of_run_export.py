@@ -24,7 +24,7 @@ def export_all_streams(uid, beamline_acronym="ucal"):
     cycle = run.start.get('cycle', None)
     if proposal is None or cycle is None:
         raise ValueError("Proposal Metadata not Loaded")
-    visit_date = datetime.datetime.from_isoformat(run.start.get('start_datetime', datetime.datetime.today().isoformat()))
+    visit_date = datetime.datetime.fromisoformat(run.start.get('start_datetime', datetime.datetime.today().isoformat()))
     visit_dir = visit_date.strftime("%Y%m%d_export")
     if is_commissioning:
         export_path = f"/nsls2/data/sst/proposals/commissioning/pass-{proposal}/"
