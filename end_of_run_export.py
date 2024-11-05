@@ -35,7 +35,7 @@ def export_all_streams(uid, beamline_acronym="ucal"):
     logger.info(f"Export Data to {export_path}")
     export_path_exists = exists(export_path)
     if not export_path_exists:
-        os.makedirs(export_path, exists_ok=True)
+        os.makedirs(export_path, exist_ok=True)
         logger.info(f"Export path does not exist, making {export_path}")
 
     header, data = get_header_and_data(run)
