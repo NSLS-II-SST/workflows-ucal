@@ -41,7 +41,19 @@ def export_all_streams(uid, beamline_acronym="ucal"):
     header, data = get_header_and_data(run)
     exportToAthena(export_path, data, header)
 
+@task(retries=2, retry_delay_seconds=10)
+def export_tes(uid, beamline_acronym="ucal"):
+    from ucalpost.databroker.run import get_config_dict
+    tiled_client = initialize_tiled_client()
+    run = tiled_client[beamline_acronym]["raw"][uid]
+    if "tes" not in run.start.get("detectors", []):
+        print("No TES in run, skipping!")
+        return
+    else:
+        print(f'Noise UID: {get_config_dict(run)["tes_noise_uid"]}')
+        print(f'Cal UID: {get_config_dict(run)["tes_calibration_uid"]}')
     
 @flow
 def general_data_export(uid, beamline_acronym="ucal"):
     export_all_streams(uid, beamline_acronym)
+    export_tes(uid, beamline_acronym)
