@@ -70,8 +70,8 @@ def export_tes(uid, beamline_acronym="ucal"):
         else:
             logger.info(f'Noise UID: {get_config_dict(run)["tes_noise_uid"]}')
             logger.info(f'Cal UID: {get_config_dict(run)["tes_calibration_uid"]}')
-    except:
-        logger.info("Something went wrong with tes export!")
+    except Exception as e:
+        logger.info(f"Something went wrong with tes export: {e}")
 
 
 @flow
