@@ -7,7 +7,6 @@ from os.path import exists, join
 import os
 from export_to_athena import exportToAthena
 from export_to_xdi import exportToXDI
-from export_tools import get_header_and_data
 import datetime
 
 
@@ -59,16 +58,17 @@ def export_all_streams(uid, beamline_acronym="ucal"):
 def export_tes(uid, beamline_acronym="ucal"):
     try:
         from ucalpost.databroker.run import get_config_dict
+
+        tiled_client = initialize_tiled_client()
+        run = tiled_client[beamline_acronym]["raw"][uid]
+        if "tes" not in run.start.get("detectors", []):
+            print("No TES in run, skipping!")
+            return
+        else:
+            print(f'Noise UID: {get_config_dict(run)["tes_noise_uid"]}')
+            print(f'Cal UID: {get_config_dict(run)["tes_calibration_uid"]}')
     except ImportError:
         print("Cannot import ucalpost!")
-    tiled_client = initialize_tiled_client()
-    run = tiled_client[beamline_acronym]["raw"][uid]
-    if "tes" not in run.start.get("detectors", []):
-        print("No TES in run, skipping!")
-        return
-    else:
-        print(f'Noise UID: {get_config_dict(run)["tes_noise_uid"]}')
-        print(f'Cal UID: {get_config_dict(run)["tes_calibration_uid"]}')
 
 
 @flow
