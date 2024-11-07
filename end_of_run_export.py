@@ -2,7 +2,7 @@ import time
 
 
 from prefect import flow, get_run_logger, task
-from tiled.client import from_profile
+from tiled.client import from_profile, from_uri
 from os.path import exists, join
 import os
 from export_to_athena import exportToAthena
@@ -11,7 +11,7 @@ import datetime
 
 
 def initialize_tiled_client():
-    return from_profile("nsls2")
+    return from_uri("https://tiled.nsls2.bnl.gov")
 
 
 def get_proposal_path(run):
@@ -56,19 +56,22 @@ def export_all_streams(uid, beamline_acronym="ucal"):
 
 @task(retries=2, retry_delay_seconds=10)
 def export_tes(uid, beamline_acronym="ucal"):
+    logger = get_run_logger()
+
+    logger.info(f"In TES Exporter for {uid}")
     try:
         from ucalpost.databroker.run import get_config_dict
-
+        logger.info("Imported ucalpost")
         tiled_client = initialize_tiled_client()
         run = tiled_client[beamline_acronym]["raw"][uid]
         if "tes" not in run.start.get("detectors", []):
-            print("No TES in run, skipping!")
+            logger.info("No TES in run, skipping!")
             return
         else:
-            print(f'Noise UID: {get_config_dict(run)["tes_noise_uid"]}')
-            print(f'Cal UID: {get_config_dict(run)["tes_calibration_uid"]}')
-    except ImportError:
-        print("Cannot import ucalpost!")
+            logger.info(f'Noise UID: {get_config_dict(run)["tes_noise_uid"]}')
+            logger.info(f'Cal UID: {get_config_dict(run)["tes_calibration_uid"]}')
+    except:
+        logger.info("Something went wrong with tes export!")
 
 
 @flow
