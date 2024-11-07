@@ -1,11 +1,11 @@
 import numpy as np
 from os.path import exists, join
+from export_tools import add_comment_to_lines, get_header_and_data
 
 
 def exportToAthena(
     folder,
-    data,
-    header,
+    run,
     namefmt="scan_{scan}.dat",
     c1="",
     c2="",
@@ -27,6 +27,7 @@ def exportToAthena(
     :rtype:
 
     """
+    header, data = get_header_and_data(run)
 
     filename = join(folder, namefmt.format(**header["scaninfo"]))
     if increment:
@@ -83,23 +84,3 @@ Scan: {scan}
         f.write(headerstring)
         f.write("\n")
         np.savetxt(f, data, fmt=" %8.8e")
-
-
-def add_comment_to_lines(multiline_string, comment_char="#"):
-    """
-    Adds a comment character to the beginning of each line in a multiline string.
-
-    Parameters
-    ----------
-    multiline_string : str
-        The input multiline string.
-
-    Returns
-    -------
-    str
-        The multiline string with comment characters added to each line.
-    """
-    commented_lines = [
-        f"{comment_char} " + line for line in multiline_string.split("\n")
-    ]
-    return "\n".join(commented_lines)
