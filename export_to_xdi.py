@@ -2,7 +2,7 @@ import numpy as np
 from os.path import exists, join
 from export_tools import get_with_fallbacks, get_run_data, add_comment_to_lines
 from datetime import datetime
-
+from prefect import get_run_logger
 
 def get_config(config, keys, default=None):
     item = get_with_fallbacks(config, keys)
@@ -97,10 +97,11 @@ def exportToXDI(
     -------
     None
     """
-
+    logger = get_run_logger()
+    
     metadata = get_xdi_run_header(run)
     metadata.update(headerUpdates)
-
+    logger.info("Got XDI Metadata")
     file_parts = ["scan"]
     file_parts.append(str(metadata.get("Scan.id")))
     if metadata.get("Sample.name", "") != "":
@@ -114,6 +115,7 @@ def exportToXDI(
         print(f"Exporting to {filename}")
 
     columns, run_data = get_run_data(run, omit=["tes_scan_point_start", "tes_scan_point_end"])
+    logger.info("Got XDI Data")
     # Rename energy columns if present
     if "en_energy" in columns:
         columns[columns.index("en_energy")] = "energy"
@@ -130,11 +132,9 @@ def exportToXDI(
     header_lines.append("#" + "-" * 50)
     header_lines.append("# " + colStr)
     header_string = "\n".join(header_lines)
-
+    logger.info(f"Writing to {filename}")
     with open(filename, "w") as f:
         f.write(header_string)
         f.write("\n")
         np.savetxt(f, data, fmt="%8.8e", delimiter=" ")
-
-    if verbose:
-        print(f"Exported XDI ASCII file to {filename}")
+        

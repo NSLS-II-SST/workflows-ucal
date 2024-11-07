@@ -50,7 +50,9 @@ def export_all_streams(uid, beamline_acronym="ucal"):
         os.makedirs(export_path, exist_ok=True)
         logger.info(f"Export path does not exist, making {export_path}")
 
+    logger.info("Exporting XDI")
     exportToXDI(export_path, run)
+    logger.info("Exporting Athena")
     exportToAthena(export_path, run)
 
 

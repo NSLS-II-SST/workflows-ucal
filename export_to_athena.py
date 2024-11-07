@@ -1,6 +1,7 @@
 import numpy as np
 from os.path import exists, join
 from export_tools import add_comment_to_lines, get_header_and_data
+from prefect import get_run_logger
 
 
 def exportToAthena(
@@ -11,8 +12,7 @@ def exportToAthena(
     c2="",
     headerUpdates={},
     strict=False,
-    verbose=True,
-    increment=True,
+    verbose=True
 ):
     """Exports to Graham's ASCII SSRL data format
 
@@ -27,17 +27,12 @@ def exportToAthena(
     :rtype:
 
     """
+    logger = get_run_logger()
+    logger.info("Getting athena header and data")
     header, data = get_header_and_data(run)
 
     filename = join(folder, namefmt.format(**header["scaninfo"]))
-    if increment:
-        base_filename = filename
-        i = 1
-        while exists(filename):
-            filename = base_filename + f"_{i}"
 
-    if verbose:
-        print(f"Exporting to {filename}")
     metadata = {}
     metadata.update(header["scaninfo"])
     metadata.update(headerUpdates)
@@ -80,6 +75,7 @@ Scan: {scan}
         **metadata, **motors
     )
     headerstring = add_comment_to_lines(headerstring, "#")
+    logger.info(f"Writing Athena to {filename}")
     with open(filename, "w") as f:
         f.write(headerstring)
         f.write("\n")
