@@ -13,9 +13,11 @@ def get_config(config, keys, default=None):
 
 
 def get_xdi_run_header(run):
+    baseline = run.baseline.data.read()
     metadata = {}
     metadata["Facility.name"] = "NSLS-II"
     metadata["Facility.xray_source"] = "EPU60 Undulator"
+    metadata["Facility.current"] = float(get_with_fallbacks(baseline, "NSLS-II Ring Current", default=[400])[0])
 
     metadata["Beamline.name"] = "7-ID-1"
     metadata["Beamline.chamber"] = "NEXAFS"
@@ -41,7 +43,7 @@ def get_xdi_run_header(run):
     metadata["Proposal.cycle"] = run.start.get("cycle", "")
     metadata["Proposal.start"] = run.start.get("start_datetime", "")
 
-    baseline = run.baseline.data.read()
+    
     metadata["Motors.exslit"] = float(
         get_with_fallbacks(baseline, "eslit", "Exit Slit of Mono Vertical Gap", default=[0])[0]
     )
