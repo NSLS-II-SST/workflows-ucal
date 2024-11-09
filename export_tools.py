@@ -1,5 +1,23 @@
 import datetime
 import numpy as np
+from tiled.client import from_uri
+
+
+def initialize_tiled_client(beamline_acronym):
+    return from_uri("https://tiled.nsls2.bnl.gov")[beamline_acronym]["raw"]
+
+
+def get_proposal_path(run):
+    proposal = run.start.get("proposal", {}).get("proposal_id", None)
+    is_commissioning = "commissioning" in run.start.get("proposal", {}).get("type", "").lower()
+    cycle = run.start.get("cycle", None)
+    if proposal is None or cycle is None:
+        raise ValueError("Proposal Metadata not Loaded")
+    if is_commissioning:
+        proposal_path = f"/nsls2/data/sst/proposals/commissioning/pass-{proposal}/"
+    else:
+        proposal_path = f"/nsls2/data/sst/proposals/{cycle}/pass-{proposal}/"
+    return proposal_path
 
 
 def get_with_fallbacks(thing, *possible_names, default=None):

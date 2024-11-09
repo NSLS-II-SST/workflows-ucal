@@ -1,18 +1,14 @@
 import time
 
 from prefect import flow, get_run_logger, task
-from tiled.client import from_profile
-
-
-def initialize_tiled_client():
-    return from_profile("nsls2")
+from export_tools import initialize_tiled_client
 
 
 @task(retries=2, retry_delay_seconds=10)
 def read_all_streams(uid, beamline_acronym="ucal"):
     logger = get_run_logger()
-    tiled_client = initialize_tiled_client()
-    run = tiled_client[beamline_acronym]["raw"][uid]
+    tiled_client = initialize_tiled_client(beamline_acronym)
+    run = tiled_client[uid]
     logger.info(f"Validating uid {run.start['uid']}")
     start_time = time.monotonic()
     for stream in run:
