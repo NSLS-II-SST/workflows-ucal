@@ -18,5 +18,5 @@ def end_of_run_workflow(stop_doc):
     # Here is where exporters could be added
     general_data_export(uid)
 
-    # process_tes(uid)
+    process_tes(uid)
     log_completion()
