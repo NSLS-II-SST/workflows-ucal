@@ -22,6 +22,7 @@ def process_tes(uid, beamline_acronym="ucal"):
     logger.info(f"Loading TES Data from {get_filename(run)}")
     # Get data files
     data = get_data(run)
+    data.verbose = False
     save_directory = join(get_proposal_path(run), "ucal_processing")
     logger.info("TES Data loaded")
     # Handle calibration runs first
