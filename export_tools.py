@@ -125,7 +125,7 @@ def get_run_data(run, omit=[]):
     # Add a try-except here after testing
     save_directory = join(get_proposal_path(run), "ucal_processing")
 
-    rois, tes_data = get_tes_data(run)
+    rois, tes_data = get_tes_data(run, save_directory)
     for key in usekeys:
         if len(data[key].shape) == 1:
             if key in tes_data:
