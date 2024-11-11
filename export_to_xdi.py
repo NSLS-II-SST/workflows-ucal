@@ -39,7 +39,15 @@ def get_xdi_run_header(run):
     metadata["Element.edge"] = run.start.get("edge", "")
     # This is just a kludge for re-export of old data where we used edge, not element in run.start
     if metadata["Element.symbol"] == "" and metadata["Element.edge"] != "":
-        metadata["Element.symbol"] = metadata["Element.edge"]
+        element = metadata["Element.edge"]
+        metadata["Element.symbol"] = element
+        metadata["Element.edge"] = ""  # Because it was really the element symbol
+        if element.lower() in ["c", "n", "o", "f", "na", "mg", "al", "si"]:
+            metadata["Element.edge"] = "K"
+        elif element.lower() in ["ca", "sc", "ti", "v", "cr", "mn", "fe", "co", "ni", "cu", "zn"]:
+            metadata["Element.edge"] = "L"
+        elif element.lower() in ["ce"]:
+            metadata["Element.edge"] = "M"
 
     proposal = run.start.get("proposal", {})
     metadata["Proposal.id"] = proposal.get("proposal_id", "")
