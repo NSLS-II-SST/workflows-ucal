@@ -137,6 +137,8 @@ def exportToXDI(
         columns[columns.index("en_energy")] = "energy"
     if "en_energy_setpoint" in columns:
         columns[columns.index("en_energy_setpoint")] = "energy_setpoint"
+
+    fmtStr = generate_format_string(run_data)
     data = np.vstack(run_data).T
     colStr = " ".join(columns)
 
@@ -152,4 +154,32 @@ def exportToXDI(
     with open(filename, "w") as f:
         f.write(header_string)
         f.write("\n")
-        np.savetxt(f, data, fmt="%8.8e", delimiter=" ")
+        np.savetxt(f, data, fmt=fmtStr, delimiter=" ")
+
+
+def generate_format_string(data):
+    """
+    Generate a format string for numpy.savetxt based on data type and average value.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The input data array.
+
+    Returns
+    -------
+    str
+        A format string for numpy.savetxt.
+    """
+    formats = []
+    for column_data in data:
+        if np.issubdtype(column_data.dtype, np.integer):
+            formats.append("%d")
+        else:
+            avg_value = np.mean(column_data)
+            if avg_value < 1:
+                formats.append("%.4e")
+            else:
+                formats.append("%.3f")
+
+    return " ".join(formats)
