@@ -174,12 +174,15 @@ def generate_format_string(data):
     formats = []
     for column_data in data:
         if np.issubdtype(column_data.dtype, np.integer):
-            formats.append("%d")
+            width = len(str(np.max(np.abs(column_data))))
+            formats.append(f"%{width}d")
         else:
             avg_value = np.mean(column_data)
-            if avg_value < 1:
+            max_value = np.max(np.abs(column_data))
+            if np.abs(avg_value) < 1:
                 formats.append("%.4e")
             else:
-                formats.append("%.3f")
+                width = len(str(int(max_value))) + 4  # Add 4 for decimal point and 3 decimals
+                formats.append(f"%{width}.3f")
 
     return " ".join(formats)
