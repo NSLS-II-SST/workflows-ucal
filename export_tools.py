@@ -1,6 +1,8 @@
 import datetime
 import numpy as np
+from os.path import join
 from tiled.client import from_uri
+from autoprocess.statelessAnalysis import get_tes_data
 
 
 def initialize_tiled_client(beamline_acronym):
@@ -37,7 +39,7 @@ def get_with_fallbacks(thing, *possible_names, default=None):
 
 
 def get_header_and_data(run):
-    cols, run_data = get_run_data(run)
+    cols, run_data, rois = get_run_data(run)
     header = get_run_header(run)
     header["channelinfo"]["cols"] = cols
     data = np.vstack(run_data).T
@@ -120,9 +122,16 @@ def get_run_data(run, omit=[]):
             continue
         usekeys.append(key)
     data = run.primary.data.read(usekeys)
+    # Add a try-except here after testing
+    save_directory = join(get_proposal_path(run), "ucal_processing")
+
+    rois, tes_data = get_tes_data(run)
     for key in usekeys:
         if len(data[key].shape) == 1:
-            datadict[key] = data[key].data
+            if key in tes_data:
+                datadict[key] = tes_data[key]
+            else:
+                datadict[key] = data[key].data
     if "seconds" not in datadict:
         datadict["seconds"] = np.zeros_like(datadict[key]) + exposure
     for k in natural_order:
@@ -132,7 +141,7 @@ def get_run_data(run, omit=[]):
         if k not in columns and k not in omit:
             columns.append(k)
     data = [datadict[k] for k in columns]
-    return columns, data
+    return columns, data, rois
 
 
 def add_comment_to_lines(multiline_string, comment_char="#"):

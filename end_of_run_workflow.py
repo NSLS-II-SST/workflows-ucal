@@ -15,8 +15,8 @@ def log_completion():
 def end_of_run_workflow(stop_doc):
     uid = stop_doc["run_start"]
     general_data_validation(uid)
+    process_tes(uid)
     # Here is where exporters could be added
     general_data_export(uid)
 
-    process_tes(uid)
     log_completion()

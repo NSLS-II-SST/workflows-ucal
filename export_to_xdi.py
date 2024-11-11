@@ -4,6 +4,7 @@ from export_tools import get_with_fallbacks, get_run_data, add_comment_to_lines
 from datetime import datetime
 from prefect import get_run_logger
 
+
 def get_config(config, keys, default=None):
     item = get_with_fallbacks(config, keys)
     try:
@@ -34,8 +35,11 @@ def get_xdi_run_header(run):
     metadata["Scan.type"] = run.start.get("scantype", "unknown")
     metadata["Scan.motors"] = run.start.get("motors", ["time"])[0]
 
-    metadata["Element.symbol"] = run.start.get("edge", "")
+    metadata["Element.symbol"] = run.start.get("element", "")
     metadata["Element.edge"] = run.start.get("edge", "")
+    # This is just a kludge for re-export of old data where we used edge, not element in run.start
+    if metadata["Element.symbols"] == "" and metadata["Element.edge"] != "":
+        metadata["Element.symbols"] = metadata["Element.edge"]
 
     proposal = run.start.get("proposal", {})
     metadata["Proposal.id"] = proposal.get("proposal_id", "")
@@ -43,7 +47,6 @@ def get_xdi_run_header(run):
     metadata["Proposal.cycle"] = run.start.get("cycle", "")
     metadata["Proposal.start"] = run.start.get("start_datetime", "")
 
-    
     metadata["Motors.exslit"] = float(
         get_with_fallbacks(baseline, "eslit", "Exit Slit of Mono Vertical Gap", default=[0])[0]
     )
@@ -100,7 +103,7 @@ def exportToXDI(
     None
     """
     logger = get_run_logger()
-    
+
     metadata = get_xdi_run_header(run)
     metadata.update(headerUpdates)
     logger.info("Got XDI Metadata")
@@ -116,7 +119,10 @@ def exportToXDI(
     if verbose:
         print(f"Exporting to {filename}")
 
-    columns, run_data = get_run_data(run, omit=["tes_scan_point_start", "tes_scan_point_end"])
+    columns, run_data, tes_rois = get_run_data(run, omit=["tes_scan_point_start", "tes_scan_point_end"])
+    for c in columns:
+        if c in tes_rois:
+            metadata[f"{c}.roi"] = "{:.2f} {:.2f}".format(*tes_rois[c])
     logger.info("Got XDI Data")
     # Rename energy columns if present
     if "en_energy" in columns:
@@ -139,4 +145,3 @@ def exportToXDI(
         f.write(header_string)
         f.write("\n")
         np.savetxt(f, data, fmt="%8.8e", delimiter=" ")
-        
