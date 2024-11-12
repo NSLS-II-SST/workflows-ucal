@@ -136,10 +136,11 @@ def get_run_data(run, omit=[]):
         if key not in usekeys:
             usekeys.append(key)
     for key in usekeys:
-        if len(data[key].shape) == 1:
-            if key in tes_data:
+        if key in tes_data:
+            if len(tes_data[key].shape) == 1:
                 datadict[key] = tes_data[key]
-            else:
+        else:
+            if len(data[key].shape) == 1:
                 datadict[key] = data[key].data
     if "seconds" not in datadict:
         datadict["seconds"] = np.zeros_like(datadict[key]) + exposure
