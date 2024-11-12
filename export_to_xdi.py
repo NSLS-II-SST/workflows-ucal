@@ -111,7 +111,9 @@ def exportToXDI(
     None
     """
     logger = get_run_logger()
-
+    if "primary" not in run:
+        logger.info(f"XDI Export does not support streams other than Primary, skipping {run.start['scan_id']}")
+        return False
     metadata = get_xdi_run_header(run)
     metadata.update(headerUpdates)
     logger.info("Got XDI Metadata")

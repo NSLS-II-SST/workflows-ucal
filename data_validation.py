@@ -7,8 +7,9 @@ from export_tools import initialize_tiled_client
 @task(retries=2, retry_delay_seconds=10)
 def read_all_streams(uid, beamline_acronym="ucal"):
     logger = get_run_logger()
-    tiled_client = initialize_tiled_client(beamline_acronym)
-    run = tiled_client[uid]
+    catalog = initialize_tiled_client(beamline_acronym)
+    run = catalog[uid]
+
     logger.info(f"Validating uid {run.start['uid']}")
     start_time = time.monotonic()
     for stream in run:
@@ -23,5 +24,5 @@ def read_all_streams(uid, beamline_acronym="ucal"):
 
 
 @flow
-def general_data_validation(uid, beamline_acronym="ucal"):
-    read_all_streams(uid, beamline_acronym)
+def general_data_validation(run, beamline_acronym="ucal"):
+    read_all_streams(run, beamline_acronym)
