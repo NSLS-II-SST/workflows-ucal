@@ -14,4 +14,4 @@ def process_tes(uid, beamline_acronym="ucal", reprocess=False):
 
     save_directory = join(get_proposal_path(run), "ucal_processing")
 
-    handle_run(run, catalog, save_directory)
+    handle_run(uid, catalog, save_directory)

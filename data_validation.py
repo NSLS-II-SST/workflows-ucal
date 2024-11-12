@@ -24,5 +24,5 @@ def read_all_streams(uid, beamline_acronym="ucal"):
 
 
 @flow
-def general_data_validation(run, beamline_acronym="ucal"):
-    read_all_streams(run, beamline_acronym)
+def general_data_validation(uid, beamline_acronym="ucal"):
+    read_all_streams(uid, beamline_acronym)
