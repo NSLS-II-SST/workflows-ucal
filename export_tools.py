@@ -132,6 +132,9 @@ def get_run_data(run, omit=[]):
         print(f"No TES Data is Processed for {run.start['scan_id']}")
         rois = {}
         tes_data = {}
+    for key in rois:
+        if key not in usekeys:
+            usekeys.append(key)
     for key in usekeys:
         if len(data[key].shape) == 1:
             if key in tes_data:
