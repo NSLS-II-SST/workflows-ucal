@@ -180,9 +180,9 @@ def generate_format_string(data):
             avg_value = np.mean(column_data)
             max_value = np.max(np.abs(column_data))
             if np.abs(avg_value) < 1:
-                formats.append("%.4e")
+                formats.append("%11.4e")
             else:
                 width = len(str(int(max_value))) + 5  # Add 5 for decimal point, 3 decimals, and sign
-                formats.append(f"%+{width}.3f")
+                formats.append(f"%{width}.3f")
 
     return " ".join(formats)
