@@ -3,6 +3,7 @@ import numpy as np
 from os.path import join
 from tiled.client import from_uri
 from autoprocess.statelessAnalysis import get_tes_data
+from autoprocess.utils import run_is_processed
 
 
 def initialize_tiled_client(beamline_acronym):
@@ -125,7 +126,12 @@ def get_run_data(run, omit=[]):
     # Add a try-except here after testing
     save_directory = join(get_proposal_path(run), "ucal_processing")
 
-    rois, tes_data = get_tes_data(run, save_directory)
+    if run_is_processed(run, save_directory):
+        rois, tes_data = get_tes_data(run, save_directory)
+    else:
+        print(f"No TES Data is Processed for {run.start['scan_id']}")
+        rois = {}
+        tes_data = {}
     for key in usekeys:
         if len(data[key].shape) == 1:
             if key in tes_data:
