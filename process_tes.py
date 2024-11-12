@@ -9,7 +9,9 @@ def process_tes(uid, beamline_acronym="ucal", reprocess=False):
     logger = get_run_logger()
     catalog = initialize_tiled_client(beamline_acronym)
     run = catalog[uid]
-
+    if "primary" not in run:
+        logger.info(f"No Primary stream for {run.start['scan_id']}")
+        return False
     logger.info(f"In TES Exporter for {run.start['uid']}")
 
     save_directory = join(get_proposal_path(run), "ucal_processing")
