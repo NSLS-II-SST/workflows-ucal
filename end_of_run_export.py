@@ -32,8 +32,8 @@ def export_all_streams(uid, beamline_acronym="ucal"):
 
     logger.info("Exporting XDI")
     exportToXDI(export_path, run)
-    logger.info("Exporting Athena")
-    exportToAthena(export_path, run)
+    # logger.info("Exporting Athena")
+    # exportToAthena(export_path, run)
 
 
 @flow
