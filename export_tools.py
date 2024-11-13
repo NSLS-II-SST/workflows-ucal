@@ -4,6 +4,7 @@ from os.path import join
 from tiled.client import from_uri
 from autoprocess.statelessAnalysis import get_tes_data
 from autoprocess.utils import run_is_processed
+import re
 
 
 def initialize_tiled_client(beamline_acronym):
@@ -90,16 +91,18 @@ def get_run_header(run):
 
 
 def get_run_data(run, omit=[]):
-    natural_order = [
-        "en_energy",
+    first_keys = [
         "en_energy_setpoint",
-        "time",
-        "seconds",
+        "en_energy",
         "nexafs_i0up",
         "nexafs_i1",
         "nexafs_ref",
         "nexafs_sc",
         "nexafs_pey",
+    ]
+    last_keys = [
+        "time",
+        "seconds",
     ]
     config = run.primary.descriptors[0]["configuration"]
     exposure = get_with_fallbacks(
@@ -144,11 +147,14 @@ def get_run_data(run, omit=[]):
                 datadict[key] = data[key].data
     if "seconds" not in datadict:
         datadict["seconds"] = np.zeros_like(datadict[key]) + exposure
-    for k in natural_order:
+    for k in first_keys:
         if k in datadict.keys() and k not in omit:
             columns.append(k)
     for k in datadict.keys():
-        if k not in columns and k not in omit:
+        if k not in columns and k not in omit and k not in last_keys:
+            columns.append(k)
+    for k in last_keys:
+        if k in datadict.keys() and k not in omit:
             columns.append(k)
     data = [datadict[k] for k in columns]
     return columns, data, rois
@@ -170,3 +176,31 @@ def add_comment_to_lines(multiline_string, comment_char="#"):
     """
     commented_lines = [f"{comment_char} " + line for line in multiline_string.split("\n")]
     return "\n".join(commented_lines)
+
+
+def sanitize_filename(filename):
+    """
+    Sanitize a filename by removing/replacing invalid characters. Avoids wrecking
+    either Windows or Linux paths.
+
+    Eliminates any characters that aren't alphanumeric, period, hyphen, underscore, forward slash, colon, or backslash
+    Replaces multiple hyphens with a single hyphen
+    Replaces whitespace and multiple underscores with a single underscore
+
+    Parameters
+    ----------
+    filename : str
+        The filename to sanitize
+
+    Returns
+    -------
+    str
+        The sanitized filename with invalid characters removed/replaced
+    """
+    # Replace any characters that aren't alphanumeric, period, hyphen, underscore, forward slash, colon, or backslash
+    filename = re.sub(r"[^\w\s\-\./:\\]", "", filename)
+    # Replace multiple hyphens with single hyphen
+    filename = re.sub(r"-+", "-", filename)
+    # Replace whitespace and multiple underscores with single underscore
+    filename = re.sub(r"[_\s]+", "_", filename)
+    return filename

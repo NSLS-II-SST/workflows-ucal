@@ -1,8 +1,7 @@
 import numpy as np
 from os.path import exists, join
-from export_tools import get_with_fallbacks, get_run_data, add_comment_to_lines
+from export_tools import get_with_fallbacks, get_run_data, add_comment_to_lines, sanitize_filename
 from datetime import datetime
-from prefect import get_run_logger
 
 
 def get_config(config, keys, default=None):
@@ -15,10 +14,16 @@ def get_config(config, keys, default=None):
 
 def get_xdi_run_header(run):
     baseline = run.baseline.data.read()
+    proposal = run.start.get("proposal", {})
     metadata = {}
     metadata["Facility.name"] = "NSLS-II"
     metadata["Facility.xray_source"] = "EPU60 Undulator"
-    metadata["Facility.current"] = float(get_with_fallbacks(baseline, "NSLS-II Ring Current", default=[400])[0])
+    metadata["Facility.current"] = "{:.2f} mA".format(
+        float(get_with_fallbacks(baseline, "NSLS-II Ring Current", default=[400])[0])
+    )
+    metadata["Facility.cycle"] = run.start.get("cycle", "")
+    metadata["Facility.GUP"] = proposal.get("proposal_id", "")
+    metadata["Facility.SAF"] = proposal.get("saf", "")
 
     metadata["Beamline.name"] = "7-ID-1"
     metadata["Beamline.chamber"] = "NEXAFS"
@@ -28,7 +33,10 @@ def get_xdi_run_header(run):
     metadata["Sample.name"] = run.start.get("sample_name", "")
     metadata["Sample.id"] = run.start.get("sample_id", "")
 
-    metadata["Scan.id"] = run.start["scan_id"]
+    metadata["Experiment.principal_investigator"] = proposal.get("pi_name", "")
+    metadata["Experiment.start"] = run.start.get("start_datetime", "")
+
+    metadata["Scan.transient_id"] = run.start["scan_id"]
     metadata["Scan.uid"] = run.start["uid"]
     metadata["Scan.command"] = run.start.get("plan_name", "")
     metadata["Scan.start_time"] = datetime.fromtimestamp(run.start["time"]).isoformat()
@@ -49,12 +57,6 @@ def get_xdi_run_header(run):
         elif element.lower() in ["ce"]:
             metadata["Element.edge"] = "M"
 
-    proposal = run.start.get("proposal", {})
-    metadata["Proposal.id"] = proposal.get("proposal_id", "")
-    metadata["Proposal.pi"] = proposal.get("pi_name", "")
-    metadata["Proposal.cycle"] = run.start.get("cycle", "")
-    metadata["Proposal.start"] = run.start.get("start_datetime", "")
-
     metadata["Motors.exslit"] = float(
         get_with_fallbacks(baseline, "eslit", "Exit Slit of Mono Vertical Gap", default=[0])[0]
     )
@@ -64,6 +66,22 @@ def get_xdi_run_header(run):
     metadata["Motors.manipr"] = float(get_with_fallbacks(baseline, "manip_r", "Manipulator_r", default=[0])[0])
     metadata["Motors.tesz"] = float(get_with_fallbacks(baseline, "tesz", default=[0])[0])
     return metadata
+
+
+def normalize_detector(search, replace, columns, header=None, description=None):
+    if search in columns:
+        columns[columns.index(search)] = replace
+        if header is not None:
+            if description is None:
+                description = search
+            header[f"Detector.{replace}"] = description
+
+
+def exclude_column(search, columns, data):
+    if search in columns:
+        idx = columns.index(search)
+        columns.pop(idx)
+        data.pop(idx)
 
 
 def exportToXDI(
@@ -110,22 +128,22 @@ def exportToXDI(
     -------
     None
     """
-    logger = get_run_logger()
     if "primary" not in run:
-        logger.info(f"XDI Export does not support streams other than Primary, skipping {run.start['scan_id']}")
+        print(f"XDI Export does not support streams other than Primary, skipping {run.start['scan_id']}")
         return False
     metadata = get_xdi_run_header(run)
     metadata.update(headerUpdates)
-    logger.info("Got XDI Metadata")
-    file_parts = ["scan"]
-    file_parts.append(str(metadata.get("Scan.id")))
+    print("Got XDI Metadata")
+    file_parts = []
     if metadata.get("Sample.name", "") != "":
         file_parts.append(metadata.get("Sample.name"))
     if metadata.get("Element.symbol", "") != "":
         file_parts.append(metadata.get("Element.symbol"))
+    file_parts.append("scan")
+    file_parts.append(str(metadata.get("Scan.transient_id")))
 
     filename = join(folder, "_".join(file_parts) + ".xdi")
-
+    filename = sanitize_filename(filename)
     if verbose:
         print(f"Exporting to {filename}")
 
@@ -133,12 +151,42 @@ def exportToXDI(
     for c in columns:
         if c in tes_rois:
             metadata[f"{c}.roi"] = "{:.2f} {:.2f}".format(*tes_rois[c])
-    logger.info("Got XDI Data")
+    print("Got XDI Data")
     # Rename energy columns if present
-    if "en_energy" in columns:
-        columns[columns.index("en_energy")] = "energy"
-    if "en_energy_setpoint" in columns:
-        columns[columns.index("en_energy_setpoint")] = "energy_setpoint"
+    normalize_detector(
+        "nexafs_i0up",
+        "i0",
+        columns,
+        metadata,
+        "Beam intensity normalization via drain current from NEXAFS upstream Au mesh",
+    )
+    normalize_detector("nexafs_i1", "itrans", columns, metadata, "Transmission intensity via downstream diode")
+    normalize_detector(
+        "nexafs_sc", "tey", columns, metadata, "Total electron yield via drain current from NEXAFS sample bar"
+    )
+    normalize_detector("nexafs_pey", "pey", columns, metadata, "Partial electron yield via NEXAFS Channeltron")
+    normalize_detector(
+        "nexafs_ref",
+        "iref",
+        columns,
+        metadata,
+        "Energy reference via drain current from upstream multimesh reference samples",
+    )
+    normalize_detector(
+        "tes_mca_counts", "tfy", columns, metadata, "Total fluorescence yield via counts from TES detector"
+    )
+    normalize_detector(
+        "tes_mca_pfy", "pfy", columns, metadata, "Partial fluorescence yield via counts from TES detector"
+    )
+    normalize_detector(
+        "m4cd", "i0_m4cd", columns, metadata, "Drain current from M4 mirror, sometimes useful as a secondary i0"
+    )
+    normalize_detector("en_energy_setpoint", "energy", columns)
+    if "energy" in columns:
+        exclude_column("en_energy", columns, run_data)
+    else:
+        normalize_detector("en_energy", "energy", columns)
+    exclude_column("ucal_sc", columns, run_data)
 
     fmtStr = generate_format_string(run_data)
     data = np.vstack(run_data).T
@@ -152,7 +200,7 @@ def exportToXDI(
     header_lines.append("#" + "-" * 50)
     header_lines.append("# " + colStr)
     header_string = "\n".join(header_lines)
-    logger.info(f"Writing to {filename}")
+    print(f"Writing to {filename}")
     with open(filename, "w") as f:
         f.write(header_string)
         f.write("\n")
