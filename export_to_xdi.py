@@ -182,6 +182,7 @@ def exportToXDI(
         "m4cd", "i0_m4cd", columns, metadata, "Drain current from M4 mirror, sometimes useful as a secondary i0"
     )
     normalize_detector("en_energy_setpoint", "energy", columns)
+    normalize_detector("seconds", "measurement_time", columns)
     if "energy" in columns:
         exclude_column("en_energy", columns, run_data)
     else:
