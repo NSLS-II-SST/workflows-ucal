@@ -158,6 +158,15 @@ def exportToXDI(
         zero_array = np.zeros_like(run_data[index - 1])
         run_data.insert(index, zero_array)
 
+    # Add TES ROI info
+    for c in columns:
+        if c in tes_rois:
+            metadata[f"rois.{c}"] = "{:.2f} {:.2f}".format(*tes_rois[c])
+
+    # Rename TFY and PFY channels
+    metadata["rois.tfy"] = metadata.pop("rois.tes_mca_counts", "")
+    metadata["rois.pfy"] = metadata.pop("rois.tes_mca_pfy", "")
+
     # Rename energy columns if present
     normalize_detector(
         "nexafs_i0up",
@@ -196,15 +205,6 @@ def exportToXDI(
     else:
         normalize_detector("en_energy", "energy", columns)
     exclude_column("ucal_sc", columns, run_data)
-
-    # Add TES ROI info
-    for c in columns:
-        if c in tes_rois:
-            metadata[f"rois.{c}"] = "{:.2f} {:.2f}".format(*tes_rois[c])
-
-    # Rename TFY and PFY channels
-    metadata["rois.tfy"] = metadata.pop("rois.tes_mca_counts", "")
-    metadata["rois.pfy"] = metadata.pop("rois.tes_mca_pfy", "")
 
     fmtStr = generate_format_string(run_data)
     data = np.vstack(run_data).T
