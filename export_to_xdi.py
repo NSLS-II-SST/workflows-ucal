@@ -148,9 +148,7 @@ def exportToXDI(
         print(f"Exporting to {filename}")
 
     columns, run_data, tes_rois = get_run_data(run, omit=["tes_scan_point_start", "tes_scan_point_end"])
-    for c in columns:
-        if c in tes_rois:
-            metadata[f"{c}.roi"] = "{:.2f} {:.2f}".format(*tes_rois[c])
+
     print("Got XDI Data")
 
     # Insert tes_mca_pfy if tes_mca_counts is present but tes_mca_pfy is not
@@ -183,12 +181,10 @@ def exportToXDI(
     normalize_detector(
         "tes_mca_counts", "tfy", columns, metadata, "Total fluorescence yield via counts from TES detector"
     )
-    metadata["tfy.roi"] = metadata.pop("tes_mca_counts.roi", "")
 
     normalize_detector(
         "tes_mca_pfy", "pfy", columns, metadata, "Partial fluorescence yield via counts from TES detector"
     )
-    metadata["pfy.roi"] = metadata.pop("tes_mca_pfy.roi", "")
 
     normalize_detector(
         "m4cd", "i0_m4cd", columns, metadata, "Drain current from M4 mirror, sometimes useful as a secondary i0"
@@ -200,6 +196,15 @@ def exportToXDI(
     else:
         normalize_detector("en_energy", "energy", columns)
     exclude_column("ucal_sc", columns, run_data)
+
+    # Add TES ROI info
+    for c in columns:
+        if c in tes_rois:
+            metadata[f"rois.{c}"] = "{:.2f} {:.2f}".format(*tes_rois[c])
+
+    # Rename TFY and PFY channels
+    metadata["rois.tfy"] = metadata.pop("rois.tes_mca_counts", "")
+    metadata["rois.pfy"] = metadata.pop("rois.tes_mca_pfy", "")
 
     fmtStr = generate_format_string(run_data)
     data = np.vstack(run_data).T
