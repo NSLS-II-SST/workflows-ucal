@@ -152,6 +152,14 @@ def exportToXDI(
         if c in tes_rois:
             metadata[f"{c}.roi"] = "{:.2f} {:.2f}".format(*tes_rois[c])
     print("Got XDI Data")
+
+    # Insert tes_mca_pfy if tes_mca_counts is present but tes_mca_pfy is not
+    if "tes_mca_counts" in columns and "tes_mca_pfy" not in columns:
+        index = columns.index("tes_mca_counts") + 1
+        columns.insert(index, "tes_mca_pfy")
+        zero_array = np.zeros_like(run_data[index - 1])
+        run_data.insert(index, zero_array)
+
     # Rename energy columns if present
     normalize_detector(
         "nexafs_i0up",
@@ -175,6 +183,7 @@ def exportToXDI(
     normalize_detector(
         "tes_mca_counts", "tfy", columns, metadata, "Total fluorescence yield via counts from TES detector"
     )
+
     normalize_detector(
         "tes_mca_pfy", "pfy", columns, metadata, "Partial fluorescence yield via counts from TES detector"
     )
