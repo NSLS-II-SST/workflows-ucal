@@ -183,10 +183,13 @@ def exportToXDI(
     normalize_detector(
         "tes_mca_counts", "tfy", columns, metadata, "Total fluorescence yield via counts from TES detector"
     )
+    metadata["tfy.roi"] = metadata.pop("tes_mca_counts.roi", "")
 
     normalize_detector(
         "tes_mca_pfy", "pfy", columns, metadata, "Partial fluorescence yield via counts from TES detector"
     )
+    metadata["pfy.roi"] = metadata.pop("tes_mca_pfy.roi", "")
+
     normalize_detector(
         "m4cd", "i0_m4cd", columns, metadata, "Drain current from M4 mirror, sometimes useful as a secondary i0"
     )
