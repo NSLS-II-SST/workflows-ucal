@@ -164,8 +164,9 @@ def exportToXDI(
             metadata[f"rois.{c}"] = "{:.2f} {:.2f}".format(*tes_rois[c])
 
     # Rename TFY and PFY channels
-    metadata["rois.tfy"] = metadata.pop("rois.tes_mca_counts", "")
-    metadata["rois.pfy"] = metadata.pop("rois.tes_mca_pfy", "")
+    if "tes_mca_counts" in columns:
+        metadata["rois.tfy"] = metadata.pop("rois.tes_mca_counts", "")
+        metadata["rois.pfy"] = metadata.pop("rois.tes_mca_pfy", "")
 
     # Rename energy columns if present
     normalize_detector(
