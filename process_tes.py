@@ -2,7 +2,7 @@ from prefect import flow, get_run_logger
 from export_tools import get_proposal_path, initialize_tiled_client
 from autoprocess.statelessAnalysis import handle_run
 from autoprocess.utils import get_processing_info_file
-from os.path import dirname
+from os.path import dirname, join
 import os
 import pickle
 
