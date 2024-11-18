@@ -38,12 +38,9 @@ def process_tes(uid, beamline_acronym="ucal", reprocess=False):
     save_directory = join(get_proposal_path(run), "ucal_processing")
 
     # Process the run
-    processing_info = handle_run(uid, catalog, save_directory)
+    processing_info = handle_run(uid, catalog, save_directory, reprocess=reprocess)
     # Save calibration information
     config_path = "/nsls2/data/sst/shared/config/ucal/processing_status"
-    os.makedirs(dirname(config_path), exist_ok=True)
-    with open(config_path, "wb") as f:
-        pickle.dump(processing_info, f)
 
     if "data_calibration_info" in processing_info:
         cal_path = get_processing_info_file(config_path, "calibration")
