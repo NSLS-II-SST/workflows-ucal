@@ -25,12 +25,13 @@ def exportToHDF5(folder, run, header_updates={}):
 
     with h5py.File(filename, "w") as f:
         for name, data in zip(columns, run_data):
-            if name == "tes_mca_spectrum":
+            if name == "rixs":
                 if len(data) == 3:
                     counts, mono_grid, energy_grid = data
-                    f.create_dataset("mono_grid", data=mono_grid)
-                    f.create_dataset("energy_grid", data=energy_grid)
-                    f.create_dataset("counts", data=counts)
+                    g = f.create_group("rixs")
+                    g.create_dataset("motor_grid", data=mono_grid[0, :])
+                    g.create_dataset("energy_grid", data=energy_grid[:, 0])
+                    g.create_dataset("counts", data=counts)
                 else:
                     f.create_dataset(name, data=data)
             else:

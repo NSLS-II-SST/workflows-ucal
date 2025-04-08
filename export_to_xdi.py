@@ -157,6 +157,9 @@ def get_xdi_normalized_data(run, metadata, omit_array_keys=True):
         metadata["rois.tfy"] = metadata.pop("rois.tes_mca_counts", "")
         metadata["rois.pfy"] = metadata.pop("rois.tes_mca_pfy", "")
 
+    if "tes_mca_spectrum" in columns:
+        metadata["rois.rixs"] = metadata.pop("rois.tes_mca_spectrum", "")
+
     # Rename energy columns if present
     normalize_detector(
         "nexafs_i0up",
@@ -184,7 +187,7 @@ def get_xdi_normalized_data(run, metadata, omit_array_keys=True):
     normalize_detector(
         "tes_mca_pfy", "pfy", columns, metadata, "Partial fluorescence yield via counts from TES detector"
     )
-
+    normalize_detector("tes_mca_spectrum", "rixs", columns, metadata, "RIXS spectrum via TES detector")
     normalize_detector(
         "m4cd", "i0_m4cd", columns, metadata, "Drain current from M4 mirror, sometimes useful as a secondary i0"
     )
