@@ -29,8 +29,8 @@ def exportToHDF5(folder, run, header_updates={}):
                 if len(data) == 3:
                     counts, mono_grid, energy_grid = data
                     g = f.create_group("rixs")
-                    g.create_dataset("motor_grid", data=mono_grid[0, :])
-                    g.create_dataset("energy_grid", data=energy_grid[:, 0])
+                    g.create_dataset("motor_values", data=mono_grid[0, :])
+                    g.create_dataset("emission_energies", data=energy_grid[:, 0])
                     g.create_dataset("counts", data=counts)
                 else:
                     f.create_dataset(name, data=data)
