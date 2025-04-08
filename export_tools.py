@@ -140,11 +140,23 @@ def get_run_data(run, omit=[], omit_array_keys=True):
             usekeys.append(key)
     for key in usekeys:
         if key in tes_data:
-            if len(tes_data[key].shape) == 1 or not omit_array_keys:
-                datadict[key] = tes_data[key]
+            if key == "tes_mca_spectrum":
+                if not omit_array_keys:
+                    datadict[key] = tes_data[key]
+                else:
+                    continue
+            else:
+                try:
+                    if len(tes_data[key].shape) == 1 or not omit_array_keys:
+                        datadict[key] = tes_data[key]
+                except:
+                    continue
         else:
-            if len(data[key].shape) == 1 or not omit_array_keys:
-                datadict[key] = data[key].data
+            try:
+                if len(data[key].shape) == 1 or not omit_array_keys:
+                    datadict[key] = data[key].data
+            except:
+                continue
     if "seconds" not in datadict:
         datadict["seconds"] = np.zeros_like(datadict[key]) + exposure
     for k in first_keys:
