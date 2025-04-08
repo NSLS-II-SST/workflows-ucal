@@ -3,7 +3,7 @@ import h5py
 from export_to_xdi import get_xdi_normalized_data, get_xdi_run_header, make_filename
 
 
-def export_to_hdf5(run, folder, header_updates={}):
+def exportToHDF5(folder, run, header_updates={}):
     """
     Export a run to an HDF5 file.
 

@@ -1,8 +1,8 @@
 from prefect import flow, get_run_logger, task
 from os.path import exists, join
 import os
-from export_to_athena import exportToAthena
 from export_to_xdi import exportToXDI
+from export_to_hdf5 import exportToHDF5
 from export_tools import get_proposal_path, initialize_tiled_client
 import datetime
 
@@ -33,6 +33,8 @@ def export_all_streams(uid, beamline_acronym="ucal"):
 
     logger.info("Exporting XDI")
     exportToXDI(export_path, run)
+    logger.info("Exporting HDF5")
+    exportToHDF5(export_path, run)
     # logger.info("Exporting Athena")
     # exportToAthena(export_path, run)
 
