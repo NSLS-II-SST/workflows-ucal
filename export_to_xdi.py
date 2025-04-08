@@ -5,14 +5,30 @@ from datetime import datetime
 
 
 def get_config(config, keys, default=None):
-    item = get_with_fallbacks(config, keys)
     try:
+        item = get_with_fallbacks(config, keys)
+        if item is None:
+            return default
         return item.read()
     except:
         return default
 
 
-def get_xdi_run_header(run):
+def get_xdi_run_header(run, header_updates={}):
+    """
+    Generate an XDI header dictionary from a run.
+
+    Parameters
+    ----------
+    run : Run
+    header_updates : dict
+        Dictionary of additional header fields to update or add.
+
+    Returns
+    -------
+    metadata : dict
+        The XDI header dictionary.
+    """
     baseline = run.baseline.data.read()
     proposal = run.start.get("proposal", {})
     metadata = {}
@@ -65,6 +81,7 @@ def get_xdi_run_header(run):
     metadata["Motors.manipz"] = float(get_with_fallbacks(baseline, "manip_z", "Manipulator_z", default=[0])[0])
     metadata["Motors.manipr"] = float(get_with_fallbacks(baseline, "manip_r", "Manipulator_r", default=[0])[0])
     metadata["Motors.tesz"] = float(get_with_fallbacks(baseline, "tesz", default=[0])[0])
+    metadata.update(header_updates)
     return metadata
 
 
@@ -84,56 +101,7 @@ def exclude_column(search, columns, data):
         data.pop(idx)
 
 
-def exportToXDI(
-    folder,
-    run,
-    headerUpdates={},
-    strict=False,
-    verbose=True,
-    increment=True,
-):
-    """
-    Export data to the XAS-Data-Interchange (XDI) ASCII format.
-
-    Parameters
-    ----------
-    folder : str
-        Export directory where the XDI file will be saved.
-    data : np.ndarray
-        Numpy array containing the data with dimensions (npts, ncols).
-    header : dict
-        Dictionary containing   metadata', 'motors', and 'channelinfo' sub-dictionaries.
-    namefmt : str, optional
-        Format string for the output filename, default is "scan_{scan}.xdi".
-    exit_slit : str, optional
-        Exit slit information to include as an extension field.
-    scan_uid : str, optional
-        Unique identifier for the scan to include as an extension field.
-    facility : str, optional
-        Name of the facility, default is "NSLS-II".
-    beamline : str, optional
-        Name of the beamline, default is "7ID1 (NEXAFS)".
-    xray_source : str, optional
-        Description of the X-ray source, default is "EPU60 Undulator".
-    headerUpdates : dict, optional
-        Dictionary of additional header fields to update or add.
-    strict : bool, optional
-        If True, ensures certain header fields are not lists.
-    verbose : bool, optional
-        If True, prints export status messages.
-    increment : bool, optional
-        If True, increments the filename if it already exists to prevent overwriting.
-
-    Returns
-    -------
-    None
-    """
-    if "primary" not in run:
-        print(f"XDI Export does not support streams other than Primary, skipping {run.start['scan_id']}")
-        return False
-    metadata = get_xdi_run_header(run)
-    metadata.update(headerUpdates)
-    print("Got XDI Metadata")
+def make_filename(folder, metadata, ext="xdi"):
     file_parts = []
     if metadata.get("Sample.name", "") != "":
         file_parts.append(metadata.get("Sample.name"))
@@ -142,13 +110,34 @@ def exportToXDI(
     file_parts.append("scan")
     file_parts.append(str(metadata.get("Scan.transient_id")))
 
-    filename = join(folder, "_".join(file_parts) + ".xdi")
+    filename = join(folder, "_".join(file_parts) + "." + ext)
     filename = sanitize_filename(filename)
-    if verbose:
-        print(f"Exporting to {filename}")
+    return filename
 
-    columns, run_data, tes_rois = get_run_data(run, omit=["tes_scan_point_start", "tes_scan_point_end"])
 
+def get_xdi_normalized_data(run, metadata, omit_array_keys=True):
+    """
+    Get run data, and rename detectors to standard names for XDI export. Modify metadata in place.
+
+    Parameters
+    ----------
+    run : Run
+        The run to normalize.
+    metadata : dict
+        The metadata to modify.
+
+    Returns
+    -------
+    columns : list
+        The column names to write to the XDI file.
+    run_data : np.ndarray
+        The data to write to the XDI file.
+    metadata : dict
+        The modified metadata.
+    """
+    columns, run_data, tes_rois = get_run_data(
+        run, omit=["tes_scan_point_start", "tes_scan_point_end"], omit_array_keys=omit_array_keys
+    )
     print("Got XDI Data")
 
     # Insert tes_mca_pfy if tes_mca_counts is present but tes_mca_pfy is not
@@ -207,7 +196,66 @@ def exportToXDI(
         normalize_detector("en_energy", "energy", columns)
     exclude_column("ucal_sc", columns, run_data)
 
+    return columns, run_data, metadata
+
+
+def exportToXDI(
+    folder,
+    run,
+    headerUpdates={},
+    strict=False,
+    verbose=True,
+    increment=True,
+):
+    """
+    Export data to the XAS-Data-Interchange (XDI) ASCII format.
+
+    Parameters
+    ----------
+    folder : str
+        Export directory where the XDI file will be saved.
+    data : np.ndarray
+        Numpy array containing the data with dimensions (npts, ncols).
+    header : dict
+        Dictionary containing   metadata', 'motors', and 'channelinfo' sub-dictionaries.
+    namefmt : str, optional
+        Format string for the output filename, default is "scan_{scan}.xdi".
+    exit_slit : str, optional
+        Exit slit information to include as an extension field.
+    scan_uid : str, optional
+        Unique identifier for the scan to include as an extension field.
+    facility : str, optional
+        Name of the facility, default is "NSLS-II".
+    beamline : str, optional
+        Name of the beamline, default is "7ID1 (NEXAFS)".
+    xray_source : str, optional
+        Description of the X-ray source, default is "EPU60 Undulator".
+    headerUpdates : dict, optional
+        Dictionary of additional header fields to update or add.
+    strict : bool, optional
+        If True, ensures certain header fields are not lists.
+    verbose : bool, optional
+        If True, prints export status messages.
+    increment : bool, optional
+        If True, increments the filename if it already exists to prevent overwriting.
+
+    Returns
+    -------
+    None
+    """
+    if "primary" not in run:
+        print(f"XDI Export does not support streams other than Primary, skipping {run.start['scan_id']}")
+        return False
+    metadata = get_xdi_run_header(run, headerUpdates)
+    print("Got XDI Metadata")
+    filename = make_filename(folder, metadata)
+    if verbose:
+        print(f"Exporting to {filename}")
+
+    columns, run_data, metadata = get_xdi_normalized_data(run, metadata)
+
     fmtStr = generate_format_string(run_data)
+
     data = np.vstack(run_data).T
     colStr = " ".join(columns)
 

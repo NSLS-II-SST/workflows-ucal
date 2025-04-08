@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 from os.path import join
 from tiled.client import from_uri
-from autoprocess.statelessAnalysis import get_tes_data
+from autoprocess.statelessAnalysis import get_tes_data, get_tes_rois
 from autoprocess.utils import run_is_processed
 import re
 
@@ -90,7 +90,7 @@ def get_run_header(run):
     return metadata
 
 
-def get_run_data(run, omit=[]):
+def get_run_data(run, omit=[], omit_array_keys=True):
     first_keys = [
         "en_energy_setpoint",
         "en_energy",
@@ -122,7 +122,7 @@ def get_run_data(run, omit=[]):
     usekeys = []
 
     for key in keys:
-        if key in known_array_keys:
+        if key in known_array_keys and omit_array_keys:
             continue
         usekeys.append(key)
     data = run.primary.data.read(usekeys)
@@ -130,20 +130,20 @@ def get_run_data(run, omit=[]):
     save_directory = join(get_proposal_path(run), "ucal_processing")
 
     if run_is_processed(run, save_directory):
-        rois, tes_data = get_tes_data(run, save_directory)
+        rois, tes_data = get_tes_data(run, save_directory, omit_array_keys=omit_array_keys)
     else:
         print(f"No TES Data is Processed for {run.start['scan_id']}")
-        rois = {}
+        rois = get_tes_rois(run, omit_array_keys=omit_array_keys)
         tes_data = {}
     for key in rois:
-        if key not in usekeys:
+        if key not in usekeys and key in tes_data:
             usekeys.append(key)
     for key in usekeys:
         if key in tes_data:
-            if len(tes_data[key].shape) == 1:
+            if len(tes_data[key].shape) == 1 or not omit_array_keys:
                 datadict[key] = tes_data[key]
         else:
-            if len(data[key].shape) == 1:
+            if len(data[key].shape) == 1 or not omit_array_keys:
                 datadict[key] = data[key].data
     if "seconds" not in datadict:
         datadict["seconds"] = np.zeros_like(datadict[key]) + exposure
