@@ -17,6 +17,11 @@ def end_of_run_workflow(stop_doc):
     logger = get_run_logger()
 
     general_data_validation(uid)
+    catalog = initialize_tiled_client("ucal")
+    run = catalog[uid]
+    if run.get("data_session", "") == "":
+        logger.info("No data session found, skipping export")
+        return
     process_tes(uid)
     # Here is where exporters could be added
     exit_status = stop_doc.get("exit_status", "No Status")
