@@ -19,7 +19,7 @@ def end_of_run_workflow(stop_doc):
     general_data_validation(uid)
     catalog = initialize_tiled_client("ucal")
     run = catalog[uid]
-    if run.get("data_session", "") == "":
+    if run.start.get("data_session", "") == "":
         logger.info("No data session found, skipping export")
         return
     process_tes(uid)
