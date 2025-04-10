@@ -107,7 +107,10 @@ def make_filename(folder, metadata, ext="xdi"):
         file_parts.append(metadata.get("Sample.name"))
     if metadata.get("Element.symbol", "") != "":
         file_parts.append(metadata.get("Element.symbol"))
-    file_parts.append("scan")
+    if metadata.get("Scan.command", "") != "":
+        file_parts.append(metadata.get("Scan.command"))
+    else:
+        file_parts.append("scan")
     file_parts.append(str(metadata.get("Scan.transient_id")))
 
     filename = join(folder, "_".join(file_parts) + "." + ext)

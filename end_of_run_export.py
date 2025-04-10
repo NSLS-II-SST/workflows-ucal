@@ -17,24 +17,33 @@ def get_export_path(run):
     return export_path
 
 
+def create_export_path(export_path):
+    logger = get_run_logger()
+    export_path_exists = exists(export_path)
+    if not export_path_exists:
+        os.makedirs(export_path, exist_ok=True)
+        logger.info(f"Export path does not exist, making {export_path}")
+
+
 @task(retries=2, retry_delay_seconds=10)
 def export_all_streams(uid, beamline_acronym="ucal"):
     logger = get_run_logger()
     catalog = initialize_tiled_client(beamline_acronym)
     run = catalog[uid]
 
-    export_path = get_export_path(run)
+    base_export_path = get_export_path(run)
     logger.info(f"Generating Export for uid {run.start['uid']}")
-    logger.info(f"Export Data to {export_path}")
-    export_path_exists = exists(export_path)
-    if not export_path_exists:
-        os.makedirs(export_path, exist_ok=True)
-        logger.info(f"Export path does not exist, making {export_path}")
+    logger.info(f"Export Data to {base_export_path}")
+    create_export_path(base_export_path)
 
     logger.info("Exporting XDI")
-    exportToXDI(export_path, run)
+    xdi_export_path = join(base_export_path, "xdi")
+    create_export_path(xdi_export_path)
+    exportToXDI(xdi_export_path, run)
     logger.info("Exporting HDF5")
-    exportToHDF5(export_path, run)
+    hdf5_export_path = join(base_export_path, "hdf5")
+    create_export_path(hdf5_export_path)
+    exportToHDF5(hdf5_export_path, run)
     # logger.info("Exporting Athena")
     # exportToAthena(export_path, run)
 

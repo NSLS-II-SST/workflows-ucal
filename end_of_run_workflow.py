@@ -14,10 +14,15 @@ def log_completion():
 @flow
 def end_of_run_workflow(stop_doc):
     uid = stop_doc["run_start"]
+    logger = get_run_logger()
 
     general_data_validation(uid)
     process_tes(uid)
     # Here is where exporters could be added
-    general_data_export(uid)
+    exit_status = stop_doc.get("exit_status", "No Status")
+    if exit_status == "success":
+        general_data_export(uid)
+    else:
+        logger.info(f"Run had exit status: {exit_status}, skipping export")
 
     log_completion()
