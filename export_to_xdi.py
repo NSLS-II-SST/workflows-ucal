@@ -101,7 +101,7 @@ def exclude_column(search, columns, data):
         data.pop(idx)
 
 
-def make_filename(folder, metadata, ext="xdi"):
+def make_filename(folder, metadata, ext="xdi", suffix=None):
     file_parts = []
     if metadata.get("Sample.name", "") != "":
         file_parts.append(metadata.get("Sample.name"))
@@ -112,9 +112,13 @@ def make_filename(folder, metadata, ext="xdi"):
     else:
         file_parts.append("scan")
     file_parts.append(str(metadata.get("Scan.transient_id")))
-
+    # Undecided if we want to use uid to guarantee uniqueness
+    # file_parts.append(str(metadata.get("Scan.uid"))[:8])
+    if suffix is not None:
+        file_parts.append(suffix)
     filename = join(folder, "_".join(file_parts) + "." + ext)
     filename = sanitize_filename(filename)
+
     return filename
 
 
@@ -209,9 +213,6 @@ def exportToXDI(
     folder,
     run,
     headerUpdates={},
-    strict=False,
-    verbose=True,
-    increment=True,
 ):
     """
     Export data to the XAS-Data-Interchange (XDI) ASCII format.
@@ -220,30 +221,12 @@ def exportToXDI(
     ----------
     folder : str
         Export directory where the XDI file will be saved.
-    data : np.ndarray
-        Numpy array containing the data with dimensions (npts, ncols).
-    header : dict
-        Dictionary containing   metadata', 'motors', and 'channelinfo' sub-dictionaries.
-    namefmt : str, optional
-        Format string for the output filename, default is "scan_{scan}.xdi".
-    exit_slit : str, optional
-        Exit slit information to include as an extension field.
-    scan_uid : str, optional
-        Unique identifier for the scan to include as an extension field.
-    facility : str, optional
-        Name of the facility, default is "NSLS-II".
-    beamline : str, optional
-        Name of the beamline, default is "7ID1 (NEXAFS)".
-    xray_source : str, optional
-        Description of the X-ray source, default is "EPU60 Undulator".
-    headerUpdates : dict, optional
+    run : Run
+        The run to export.
+    headerUpdates : dict
         Dictionary of additional header fields to update or add.
-    strict : bool, optional
-        If True, ensures certain header fields are not lists.
-    verbose : bool, optional
+    verbose : bool
         If True, prints export status messages.
-    increment : bool, optional
-        If True, increments the filename if it already exists to prevent overwriting.
 
     Returns
     -------
@@ -255,8 +238,6 @@ def exportToXDI(
     metadata = get_xdi_run_header(run, headerUpdates)
     print("Got XDI Metadata")
     filename = make_filename(folder, metadata)
-    if verbose:
-        print(f"Exporting to {filename}")
 
     columns, run_data, metadata = get_xdi_normalized_data(run, metadata)
 
@@ -273,7 +254,7 @@ def exportToXDI(
     header_lines.append("#" + "-" * 50)
     header_lines.append("# " + colStr)
     header_string = "\n".join(header_lines)
-    print(f"Writing to {filename}")
+    print(f"Exporting XDI to {filename}")
     with open(filename, "w") as f:
         f.write(header_string)
         f.write("\n")
