@@ -12,7 +12,7 @@ def log_completion():
 
 
 @flow
-def end_of_run_workflow(stop_doc):
+def end_of_run_workflow(stop_doc, reprocess_tes=False):
     uid = stop_doc["run_start"]
     logger = get_run_logger()
 
@@ -22,7 +22,8 @@ def end_of_run_workflow(stop_doc):
     if run.start.get("data_session", "") == "":
         logger.info("No data session found, skipping export")
         return
-    process_tes(uid)
+
+    process_tes(uid, reprocess=reprocess_tes)
     # Here is where exporters could be added
     exit_status = stop_doc.get("exit_status", "No Status")
     if exit_status == "success":
