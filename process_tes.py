@@ -38,7 +38,7 @@ def process_tes(uid, beamline_acronym="ucal", reprocess=False):
     save_directory = join(get_proposal_path(run), "ucal_processing")
 
     # Process the run
-    processing_info = handle_run(uid, catalog, save_directory, reprocess=reprocess)
+    processing_info, data = handle_run(uid, catalog, save_directory, reprocess=reprocess)
     # Save calibration information
     config_path = "/nsls2/data/sst/legacy/ucal/process_info"
     try:
