@@ -278,11 +278,11 @@ def generate_format_string(data):
     formats = []
     for column_data in data:
         if np.issubdtype(column_data.dtype, np.integer):
-            width = len(str(np.max(np.abs(column_data)))) + 1
+            width = len(str(np.nanmax(np.abs(column_data)))) + 1
             formats.append(f"%{width}d")
         else:
-            avg_value = np.mean(column_data)
-            max_value = np.max(np.abs(column_data))
+            avg_value = np.nanmean(column_data)
+            max_value = np.nanmax(np.abs(column_data))
             if np.abs(avg_value) < 1:
                 formats.append("%11.4e")
             else:
