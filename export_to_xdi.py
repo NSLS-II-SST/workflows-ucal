@@ -277,16 +277,21 @@ def generate_format_string(data):
     """
     formats = []
     for column_data in data:
-        if np.issubdtype(column_data.dtype, np.integer):
-            width = len(str(np.nanmax(np.abs(column_data)))) + 1
-            formats.append(f"%{width}d")
-        else:
-            avg_value = np.nanmean(column_data)
-            max_value = np.nanmax(np.abs(column_data))
-            if np.abs(avg_value) < 1:
+        try:
+            if not np.any(np.isfinite(column_data)):
                 formats.append("%11.4e")
+            elif np.issubdtype(column_data.dtype, np.integer):
+                width = len(str(np.nanmax(np.abs(column_data)))) + 1
+                formats.append(f"%{width}d")
             else:
-                width = len(str(int(max_value))) + 5  # Add 5 for decimal point, 3 decimals, and sign
-                formats.append(f"%{width}.3f")
+                avg_value = np.nanmean(column_data)
+                max_value = np.nanmax(np.abs(column_data))
+                if np.abs(avg_value) < 1:
+                    formats.append("%11.4e")
+                else:
+                    width = len(str(int(max_value))) + 5  # Add 5 for decimal point, 3 decimals, and sign
+                    formats.append(f"%{width}.3f")
+        except:
+            formats.append("%11.4e")
 
     return " ".join(formats)
