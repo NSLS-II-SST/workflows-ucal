@@ -101,6 +101,30 @@ def exclude_column(search, columns, data):
         data.pop(idx)
 
 
+def reorder_columns(columns, data, key, index):
+    """
+    Reorder columns and data to move a key to a specific index.
+
+    Parameters
+    ----------
+    columns : list
+        The list of column names.
+    data : list
+        The list of data arrays.
+    key : str
+        The key to move.
+    index : int
+        The index to move the key to.
+    """
+    if key in columns:
+        key_idx = columns.index(key)
+        columns.pop(key_idx)
+        column_data = data.pop(key_idx)
+        columns.insert(index, key)
+        data.insert(index, column_data)
+    return columns, data
+
+
 def make_filename(folder, metadata, ext="xdi", suffix=None):
     file_parts = []
     if metadata.get("Sample.name", "") != "":
@@ -200,12 +224,14 @@ def get_xdi_normalized_data(run, metadata, omit_array_keys=True):
     )
     normalize_detector("en_energy_setpoint", "energy", columns)
     normalize_detector("seconds", "measurement_time", columns)
+    if metadata.get("Scan.motors", "") == "en_energy":
+        metadata["Scan.motors"] = "energy"
     if "energy" in columns:
-        exclude_column("en_energy", columns, run_data)
+        normalize_detector("en_energy", "energy_readback", columns, metadata, "Monochromator energy encoder readback")
     else:
         normalize_detector("en_energy", "energy", columns)
     exclude_column("ucal_sc", columns, run_data)
-
+    columns, run_data = reorder_columns(columns, run_data, metadata.get("Scan.motors", "time"), 0)
     return columns, run_data, metadata
 
 
