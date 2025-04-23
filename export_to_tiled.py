@@ -23,12 +23,14 @@ def export_to_tiled(run, header_updates={}):
         if name == "rixs":
             if len(data) == 3:
                 counts, mono_grid, energy_grid = data
-                rixs = xr.DataArray(counts.T, coords={"emission": energy_grid[:, 0]}, dims=("time", "emission"))
+                rixs = xr.DataArray(
+                    counts.T, coords={"emission": energy_grid[:, 0]}, dims=("time", "emission"), name=name
+                )
             else:
-                rixs = xr.DataArray(data, dims=("time", "emission"))
+                rixs = xr.DataArray(data, dims=("time", "emission"), name=name)
             da_dict[name] = rixs
         else:
-            da_dict[name] = xr.DataArray(data, dims=("time",))
+            da_dict[name] = xr.DataArray(data, dims=("time",), name=name)
 
     if "time" in da_dict:
         time_coord = da_dict.pop("time")
