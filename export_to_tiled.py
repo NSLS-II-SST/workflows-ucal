@@ -2,6 +2,23 @@ from export_to_xdi import get_xdi_normalized_data, get_xdi_run_header, make_file
 import xarray as xr
 
 
+def transform_header(metadata):
+    """
+    Transform the metadata from an XDI format to a nested dictionary format.
+    Keys "Namespace.key" become "namespace/key" in the nested dictionary.
+    """
+    transformed = {}
+    for key, value in metadata.items():
+        if "." in key:
+            namespace, key = key.split(".")
+            if namespace not in transformed:
+                transformed[namespace] = {}
+            transformed[namespace][key] = value
+        else:
+            transformed[key] = value
+    return transformed
+
+
 def export_to_tiled(run, header_updates={}):
     """
     Export a run to a tiled catalog.
@@ -37,4 +54,8 @@ def export_to_tiled(run, header_updates={}):
         for name, da in da_dict.items():
             da.coords["time"] = time_coord
     da = xr.merge(da_dict.values())
-    return da
+    metadata = transform_header(metadata)
+    data_session = run.start.get("data_session", None)
+    if data_session is not None:
+        metadata["data_session"] = data_session
+    return da, metadata
